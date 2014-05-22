@@ -7,7 +7,6 @@ Got sick of your pals clogging your Facebook feed with cats, wisdom pictures and
 So far it's just a CLI but with potential to be an automated bot, just have to figure out how to avoid some Facebook restrictions.
 
 ### ToDo:
-=========
 
 * Figure out how to refresh access token
 * Setup timer to post memes automatically
