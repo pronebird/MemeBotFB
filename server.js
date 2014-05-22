@@ -70,8 +70,8 @@ var commands = {
 				console.log('Posting "%s" with picture at "%s"', message, image);
 
 				var data = querystring.stringify({
-					'message': message,
 					'picture': image,
+					'name': message,
 					'access_token': ACCESS_TOKEN
 				});
 				var options = {
