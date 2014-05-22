@@ -1,12 +1,9 @@
 ## Meme Bot Facebook
 
-Got sick of your pals clogging your Facebook feed with cats, wisdom pictures and inspirational quotes? It's time for revenge, increase the relevance of your feed by automatically posting a fresh Meme a day.
+Got sick of your pals clogging your Facebook feed with cats, wisdom pictures and inspirational quotes? It's time for revenge, increase the relevance of your feed by automatically posting fresh Meme a day.
 
 ### Notes
 
-So far it's just a CLI but with potential to be an automated bot, just have to figure out how to avoid some Facebook restrictions.
+Initial requirement is to obtain access token from Facebook. Console gives a tip on that. Once you get the token, run `token YOUR_ACCESS_TOKEN` from console. Your token will be exchanged to long-lived one and cached to disk.
 
-### ToDo:
-
-* Figure out how to refresh access token
-* Setup timer to post memes automatically
+Default bot's schedule is 10am and 4pm in european timezone. You're encouraged to change it to suit your needs.
