@@ -3,8 +3,9 @@
 process.env.TZ = 'Europe/Ljubljana';
 
 var ACCESS_TOKEN = '';
+
 var APP_ID = '758699520828270';
-var APP_SECRET = '9007b2da3d5abdbbec5cd6d613dc19bf';
+var APP_SECRET = '9007b2da3d5abdbbec5cd6d613dc19bf'; // Please, do not mess with my app
 
 var FACEBOOK_GRAPH = 'graph.facebook.com';
 var MEMEGENERATOR_API = 'version1.api.memegenerator.net';
