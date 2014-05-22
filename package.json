@@ -20,5 +20,8 @@
   "license": "Beerware",
   "bugs": {
     "url": "https://github.com/pronebird/MemeBotFB/issues"
+  },
+  "dependencies": {
+    "node-schedule": "~0.1.13"
   }
 }
