@@ -5,8 +5,9 @@ process.env.TZ = 'Europe/Ljubljana';
 var BOT_COMMANDS = {};
 var ACCESS_TOKEN = '';
 
-var APP_ID = '758699520828270';
-var APP_SECRET = '9007b2da3d5abdbbec5cd6d613dc19bf'; // Please, do not mess with my app
+// Setup vars from environment
+var APP_ID = process.env.APP_ID;
+var APP_SECRET = process.env.APP_SECRET;
 
 var FACEBOOK_GRAPH = 'graph.facebook.com';
 var MEMEGENERATOR_API = 'version1.api.memegenerator.net';
@@ -22,8 +23,8 @@ var util = require('util');
 var schedule = require('node-schedule');
 
 var rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
+	input: process.stdin,
+	output: process.stdout
 });
 
 // Net utils
@@ -123,8 +124,9 @@ function bot_run(cmd) {
 function bot_help(input, callback) {
 	console.log('Available commands:');
 	console.log('');
-	console.log('*  post - post a meme to Facebook');
+	console.log('*  post  - post a meme to Facebook');
 	console.log('*  token - get or set access token');
+	console.log('*  quit  - terminate process');
 	console.log('');
 	console.log('Use space to separate arguments, e.g. if you want to set token:');
 	console.log('   token XXXXXXX');
@@ -240,6 +242,15 @@ console.log('Meme bot is on duty.');
 console.log('Type ? for help');
 console.log('');
 
+if(!APP_ID || !APP_SECRET) {
+	console.log('Check if APP_ID and APP_SECRET environment variables set properly.');
+	console.log('Please create .env file with configuration:');
+	console.log('APP_ID=XXXXXXX');
+	console.log('APP_SECRET=XXXXXXX');
+	console.log('Use setup_env.sh to run script.');
+	console.log('');
+}
+
 // Read token from disk
 fs.readFile(TOKEN_FILE, { encoding: 'utf8' }, function (err, data) {
 	if(!err) {
@@ -251,7 +262,6 @@ fs.readFile(TOKEN_FILE, { encoding: 'utf8' }, function (err, data) {
 	ACCESS_TOKEN = data;
 
 	if(!ACCESS_TOKEN || !ACCESS_TOKEN.length) {
-		console.log('');
 		console.log('You do not have access token set for your Facebook account. Please follow the steps below:');
 		bot_token_help();
 	}
