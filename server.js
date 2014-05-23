@@ -1,7 +1,5 @@
 //.
 
-process.env.TZ = 'Europe/Ljubljana';
-
 var BOT_COMMANDS = {};
 var ACCESS_TOKEN = '';
 
