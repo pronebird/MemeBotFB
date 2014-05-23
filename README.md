@@ -21,3 +21,9 @@ TZ=YOUR_TIMEZONE # Example: Europe/Ljubljana
 ```
 
 Facebook app must be created with `publish_actions` permissions.
+
+### TODO
+
+* Once a day: Find a friend with least relevant content and publish a personal meme on his wall.
+
+Pull Requests are welcome.
