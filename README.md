@@ -26,4 +26,6 @@ Facebook app must be created with `publish_actions` permissions.
 
 * Once a day: Find a friend with least relevant content and publish a personal meme on his wall.
 
-Pull Requests are welcome.
+Pull requests are welcome.
+
+![Pull requests are welcome](https://i.imgur.com/Ky4ufVa.gif)
