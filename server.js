@@ -2,6 +2,7 @@
 
 process.env.TZ = 'Europe/Ljubljana';
 
+var BOT_COMMANDS = {};
 var ACCESS_TOKEN = '';
 
 var APP_ID = '758699520828270';
@@ -107,8 +108,8 @@ function bot_run(cmd) {
 		cmd = cmd.substring(0, space);
 	}
 
-	if(commands[cmd]) {
-		commands[cmd](input, function () {
+	if(BOT_COMMANDS[cmd]) {
+		BOT_COMMANDS[cmd](input, function () {
 			rl.prompt();
 		});
 	} else {
@@ -130,6 +131,12 @@ function bot_help(input, callback) {
 
 	bot_token_help();
 
+	callback();
+}
+
+function bot_quit(input, callback) {
+	console.log('Bye.');
+	process.exit(0);
 	callback();
 }
 
@@ -184,23 +191,24 @@ function bot_post(input, callback) {
 
 		var meme = json.result[0];
 		var message = meme.displayName;
-		var image = meme.instanceImageUrl.replace('400x', '470x246');
+		var image = meme.instanceImageUrl;
 
 		console.log('Posting "%s" with picture at "%s"', message, image);
 
 		var data = {
-			'picture': image,
-			'name': message,
-			'access_token': ACCESS_TOKEN
+			url: image,
+			message: message,
+			privacy: { value: 'EVERYONE' },
+			access_token: ACCESS_TOKEN
 		};
 
-		https_post(FACEBOOK_GRAPH, '/me/feed', data, function(body) {
+		https_post(FACEBOOK_GRAPH, '/me/photos', data, function(body) {
 			try {
 				var json = JSON.parse(body);
 				if(json.error) {
 					console.log('Got opengraph error: %s (type: %s, code: %d)', json.error.message, json.error.type, json.error.code);
 				} else {
-					console.log('Got post id: %s', json.id);
+					console.log('Got photo id: %s', json.id);
 				}
 			} catch(e) {
 				console.log('Got opengraph response: %s', body);
@@ -219,8 +227,9 @@ function bot_post(input, callback) {
 // Bootstrap
 
 // Commands map
-var commands = {
+BOT_COMMANDS = {
 	'?': bot_help,
+	'quit': bot_quit,
 	'token': bot_token,
 	'post': bot_post
 };
