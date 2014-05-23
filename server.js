@@ -22,7 +22,14 @@ var schedule = require('node-schedule');
 
 var rl = readline.createInterface({
 	input: process.stdin,
-	output: process.stdout
+	output: process.stdout,
+	completer: function(line) {
+		var completions = Object.keys(BOT_COMMANDS);
+		var hits = completions.filter(function(c) {
+			return c.indexOf(line) === 0;
+		});
+		return [ hits.length ? hits : completions, line ];
+	}
 });
 
 // Net utils
@@ -96,7 +103,7 @@ function bot_token_help() {
 	console.log('');
 }
 
-function bot_run(cmd) {
+function bot_run(cmd, callback) {
 	cmd = cmd.trim();
 
 	var space = cmd.indexOf(' ');
@@ -109,10 +116,19 @@ function bot_run(cmd) {
 
 	if(BOT_COMMANDS[cmd]) {
 		BOT_COMMANDS[cmd](input, function () {
+			if(typeof(callback) === 'function') {
+				callback();
+			}
+
 			rl.prompt();
 		});
 	} else {
 		console.log('Unrecognized command. Type ? to get a list of available commands.');
+
+		if(typeof(callback) === 'function') {
+			callback();
+		}
+
 		rl.prompt();
 	}
 }
@@ -122,7 +138,7 @@ function bot_run(cmd) {
 function bot_help(input, callback) {
 	console.log('Available commands:');
 	console.log('');
-	console.log('*  post  - post a meme to Facebook');
+	console.log('*  entertain  - entertain friends by posting a meme on Facebook');
 	console.log('*  token - get or set access token');
 	console.log('*  quit  - terminate process');
 	console.log('');
@@ -172,7 +188,7 @@ function bot_token(input, callback) {
 	});
 }
 
-function bot_post(input, callback) {
+function bot_entertain(input, callback) {
 	var path = '/Instances_Select_ByNew?languageCode=en&pageIndex=0&pageSize=1';
 	http_get(MEMEGENERATOR_API, path, function(body) {
 		var json;
@@ -193,7 +209,7 @@ function bot_post(input, callback) {
 		var message = meme.displayName;
 		var image = meme.instanceImageUrl;
 
-		console.log('Posting "%s" with picture at "%s"', message, image);
+		console.log('Entertaining friends with "%s" (picture: "%s")', message, image);
 
 		var data = {
 			url: image,
@@ -231,7 +247,7 @@ BOT_COMMANDS = {
 	'?': bot_help,
 	'quit': bot_quit,
 	'token': bot_token,
-	'post': bot_post
+	'entertain': bot_entertain
 };
 
 rl.on('line', bot_run);
@@ -284,16 +300,12 @@ schedule.scheduleJob(morningRule, function() {
 	console.log('* Morning schedule *');
 	rl.prompt();
 
-	bot_post('', function () {
-		rl.prompt();
-	});
+	bot_run('entertain');
 });
 
 schedule.scheduleJob(eveningRule, function() {
 	console.log('* Evening schedule *');
 	rl.prompt();
 
-	bot_post('', function () {
-		rl.prompt();
-	});
+	bot_run('entertain');
 });
