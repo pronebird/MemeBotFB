@@ -25,6 +25,7 @@ Facebook app must be created with `publish_actions` permissions.
 ### TODO
 
 * Once a day: Find a friend with least relevant content and publish a personal meme on his wall.
+* Once a week: Rank friends content relevance and post scoreboards. Congratulate least relevant content posters.
 
 Pull requests are welcome.
 
