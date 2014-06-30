@@ -26,6 +26,7 @@ Facebook app must be created with `publish_actions` permissions.
 
 * Once a day: Find a friend with least relevant content and publish a personal meme on his wall.
 * Once a week: Rank friends content relevance and post scoreboards. Congratulate least relevant content posters.
+* Make a web page and open service that would allow visitors to setup bots for their Facebook accounts. Get 1 billion evaluation for whatever reason, sell it to Google, buy Tesla, fancy villa and yacht, flee the country. Startup life.
 
 Pull requests are welcome.
 
