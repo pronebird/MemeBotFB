@@ -98,7 +98,7 @@ function bot_token_help() {
 	console.log('');
 	console.log('It is cumbersome these days to post on Facebook, so please obtain your access token yourself.');
 	console.log("Your token will be automatically exchanged to long-lived token and saved on disk, so you have to do it only once in few months.\n");
-	console.log('To obtian access token, go to:\nhttps://www.facebook.com/dialog/oauth?client_id=%s&redirect_uri=https://www.facebook.com/connect/login_success.html&scope=publish_actions&response_type=token', APP_ID);
+	console.log('To obtian access token, go to:\nhttps://www.facebook.com/dialog/oauth?client_id=%s&redirect_uri=https://github.com/pronebird/MemeBotFB&scope=user_friends,publish_actions&response_type=token', APP_ID);
 	console.log('After you grant access to the app, copy access token from URL bar and run: token XXXXXXX');
 	console.log('');
 }
