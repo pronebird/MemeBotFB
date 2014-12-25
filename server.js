@@ -32,6 +32,9 @@ var rl = readline.createInterface({
 	}
 });
 
+// A transitory data that persists between bot commands
+var BOT_TRANSITORY_DATA = {};
+
 // Net utils
 
 function httpx_get(hostname, path, is_ssl, success, error) {
@@ -208,6 +211,15 @@ function bot_entertain(input, callback) {
 		var meme = json.result[0];
 		var message = meme.displayName;
 		var image = meme.instanceImageUrl;
+
+		// Avoid sharing the same image twice
+		if(BOT_TRANSITORY_DATA.last_shared_image === image) {
+			console.log('Same picture as before. Not sharing.');
+			return callback();
+		}
+
+		// Save last shared image
+		BOT_TRANSITORY_DATA.last_shared_image = image;
 
 		console.log('Entertaining friends with "%s" (picture: "%s")', message, image);
 
