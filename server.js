@@ -7,17 +7,15 @@ var ACCESS_TOKEN = '';
 var APP_ID = process.env.APP_ID;
 var APP_SECRET = process.env.APP_SECRET;
 
-var FACEBOOK_GRAPH = 'graph.facebook.com';
-var MEMEGENERATOR_API = 'version1.api.memegenerator.net';
+var FACEBOOK_GRAPH = 'https://graph.facebook.com';
+var MEMEGENERATOR_API = 'http://version1.api.memegenerator.net';
 var TOKEN_FILE = '.token';
 
-var http = require('http');
-var https = require('https');
+var request = require('request');
 var querystring = require('querystring');
 var readline = require('readline');
 var fs = require('fs');
 var util = require('util');
-
 var schedule = require('node-schedule');
 
 var rl = readline.createInterface({
@@ -35,66 +33,6 @@ var rl = readline.createInterface({
 // A transitory data that persists between bot commands
 var BOT_TRANSITORY_DATA = {};
 
-// Net utils
-
-function httpx_get(hostname, path, is_ssl, success, error) {
-	var options = {
-		hostname: hostname,
-		port: is_ssl ? 443 : 80,
-		path: path
-	};
-	(is_ssl ? https : http).get(options, function(res) {
-		var body = '';
-		res.setEncoding('utf8');
-		res.on('data', function(chunk) {
-			body += chunk;
-		})
-		.on('end', function() {
-			success(body);
-		});
-	}).on('error', error);
-
-	console.log('GET %s://%s%s', is_ssl ? 'https' : 'http', hostname, path);
-}
-
-function http_get(hostname, path, success, error) {
-	return httpx_get(hostname, path, false, success, error);
-}
-
-function https_get(hostname, path, success, error) {
-	return httpx_get(hostname, path, true, success, error);
-}
-
-function https_post(hostname, path, input, success, error) {
-	var data = querystring.stringify(input || {});
-	var options = {
-		'host': hostname,
-		'port': 443,
-		'method': 'POST',
-		'path': path,
-		'headers': {
-			'Content-Type': 'application/x-www-form-urlencoded',
-			'Content-Length': data.length
-		}
-	};
-	var req = https.request(options, function(res) {
-		var body = '';
-		res.setEncoding('utf8');
-		res.on('data', function(chunk) {
-			body += chunk;
-		});
-		res.on('end', function () {
-			success(body);
-		});
-	})
-	.on('error', error);
-
-	req.write(data);
-	req.end();
-
-	console.log('POST https://%s%s', hostname, path);
-}
-
 // Routine
 
 function bot_token_help() {
@@ -106,7 +44,7 @@ function bot_token_help() {
 	console.log('');
 }
 
-function bot_run(cmd, callback) {
+function bot_run(cmd) {
 	cmd = cmd.trim();
 
 	var space = cmd.indexOf(' ');
@@ -118,27 +56,25 @@ function bot_run(cmd, callback) {
 	}
 
 	if(BOT_COMMANDS[cmd]) {
-		BOT_COMMANDS[cmd](input, function () {
-			if(typeof(callback) === 'function') {
-				callback();
-			}
+		var promise = BOT_COMMANDS[cmd](input);
 
+		rl.pause();
+		
+		promise.then(function () {
+			rl.prompt();
+		}).catch(function (error) {
+			console.log('%s: %s', cmd, error.message);
 			rl.prompt();
 		});
 	} else {
 		console.log('Unrecognized command. Type ? to get a list of available commands.');
-
-		if(typeof(callback) === 'function') {
-			callback();
-		}
-
 		rl.prompt();
 	}
 }
 
 // Bot commands
 
-function bot_help(input, callback) {
+function bot_help(input) {
 	console.log('Available commands:');
 	console.log('');
 	console.log('*  entertain  - entertain friends by posting a meme on Facebook');
@@ -150,105 +86,112 @@ function bot_help(input, callback) {
 
 	bot_token_help();
 
-	callback();
+	return Promise.resolve();
 }
 
-function bot_quit(input, callback) {
+function bot_quit(input) {
 	console.log('Bye.');
 	process.exit(0);
-	callback();
+	return Promise.resolve();
 }
 
-function bot_token(input, callback) {
+function bot_token(input) {
+	input = input.trim();
 	if(input.length == 0) {
 		console.log('Token = ' + ACCESS_TOKEN);
-		return callback();
+		return Promise.resolve();
 	}
 
-	ACCESS_TOKEN = input;
-
 	var exchange_url = '/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s';
-	var path = util.format(exchange_url, APP_ID, APP_SECRET, ACCESS_TOKEN);
+	var path = util.format(exchange_url, APP_ID, APP_SECRET, input);
 
-	https_get(FACEBOOK_GRAPH, path, function(body) {
-		var exchange = querystring.parse(body);
-
-		ACCESS_TOKEN = exchange.access_token;
-
-		console.log('Exchanged short-lived token for long-lived token.', ACCESS_TOKEN);
-		console.log('Long-lived token expires in ~%d days', parseInt(exchange.expires / 86400) );
-
-		fs.writeFile(TOKEN_FILE, ACCESS_TOKEN, function (err) {
-			if(err) {
-				console.log('Could not write token to disk. Reason: ' + e);
+	return new Promise(function (resolve, reject) {
+		request.get(FACEBOOK_GRAPH + path, function (error, response, body) {
+			if(error) {
+				console.log('Cannot get long-live token. Reason: ' + error.message);
+				return reject(error);
 			}
-			callback();
-		});
-	}, function(e) {
-		console.log('Cannot get long-live token. Reason: ' + e);
 
-		callback();
+			var exchange = querystring.parse(body);
+			ACCESS_TOKEN = exchange.access_token;
+
+			console.log('Exchanged short-lived token for long-lived token.', ACCESS_TOKEN);
+			console.log('Long-lived token expires in ~%d days', parseInt(exchange.expires / 86400) );
+
+			fs.writeFile(TOKEN_FILE, ACCESS_TOKEN, function (error) {
+				if(error) {
+					console.log('Could not write token to disk. Reason: ' + error.message);
+					return reject(error);
+				}
+				resolve(ACCESS_TOKEN);
+			});
+		});
 	});
 }
 
-function bot_entertain(input, callback) {
-	var path = '/Instances_Select_ByNew?languageCode=en&pageIndex=0&pageSize=1';
-	http_get(MEMEGENERATOR_API, path, function(body) {
-		var json;
+function bot_entertain(input) {
+	var url = MEMEGENERATOR_API + '/Instances_Select_ByNew?languageCode=en&pageIndex=0&pageSize=1';
 
-		try {
-			json = JSON.parse(body);
-		} catch(e) {
-			console.log('Got malformed JSON: ' + body);
-			return callback();
-		}
+	return new Promise(function (resolve, reject) {
+		request.get(url, function (error, response, body) {
+			if(error) { return reject(error); }
 
-		if(!json.success) {
-			console.log('API failure. Got JSON:\n' + util.inspect(json));
-			return callback();
-		}
-
-		var meme = json.result[0];
-		var message = meme.displayName;
-		var image = meme.instanceImageUrl;
-
-		// Avoid sharing the same image twice
-		if(BOT_TRANSITORY_DATA.last_shared_image === image) {
-			console.log('Same picture as before. Not sharing.');
-			return callback();
-		}
-
-		// Save last shared image
-		BOT_TRANSITORY_DATA.last_shared_image = image;
-
-		console.log('Entertaining friends with "%s" (picture: "%s")', message, image);
-
-		var data = {
-			url: image,
-			message: message,
-			privacy: { value: 'EVERYONE' },
-			access_token: ACCESS_TOKEN
-		};
-
-		https_post(FACEBOOK_GRAPH, '/me/photos', data, function(body) {
-			try {
-				var json = JSON.parse(body);
-				if(json.error) {
-					console.log('Got opengraph error: %s (type: %s, code: %d)', json.error.message, json.error.type, json.error.code);
-				} else {
-					console.log('Got photo id: %s', json.id);
-				}
+			var json;
+			try { 
+				json = JSON.parse(body); 
 			} catch(e) {
-				console.log('Got opengraph response: %s', body);
+				return reject(e); 
 			}
-			callback();
-		}, function(e) {
-			console.log('Got error: ' + e.message);
-			callback();
+
+			if(!json.success) { 
+				return reject(new Error('API failure. Got JSON:\n' + util.inspect(json))); 
+			}
+
+			var meme = json.result[0];
+			var message = meme.displayName;
+			var image = meme.instanceImageUrl;
+
+			// Avoid sharing the same image twice
+			if(BOT_TRANSITORY_DATA.last_shared_image === image) {
+				console.log('Same picture as before. Not sharing.');
+				return resolve(image);
+			}
+
+			// Save last shared image
+			BOT_TRANSITORY_DATA.last_shared_image = image;
+
+			console.log('Entertaining friends with "%s" (picture: "%s")', message, image);
+
+			var options = {
+				form: {
+					url: image,
+					message: message,
+					privacy: { value: 'EVERYONE' },
+					access_token: ACCESS_TOKEN
+				},
+				headers: {
+
+				}
+			};
+
+			request.post(FACEBOOK_GRAPH + '/me/photos', options, function (error, response, body) {
+				var json;
+				try { 
+					json = JSON.parse(body);
+				} catch(e) {
+					return reject(e);
+				}
+
+				if(json.error) {
+					var e = json.error;
+					var msg = util.format('%s (type: %s, code: %d)', e.message, e.type, e.code);
+					return reject(new Error(msg));
+				}
+
+				console.log('Got photo id: %s', json.id);
+				resolve(image, json.id);
+			});
 		});
-	}, function(e) {
-		console.log('Got error: ' + e.message);
-		callback();
 	});
 }
 

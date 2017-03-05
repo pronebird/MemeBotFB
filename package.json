@@ -1,11 +1,11 @@
 {
-  "name": "MemeBotFB",
-  "version": "0.0.2",
+  "name": "memebotfb",
+  "version": "0.0.3",
   "description": "Got sick of your pals clogging your Facebook feed with cats, wisdom pictures and inspirational quotes? It's time for revenge, increase the relevance of your feed by automatically posting fresh Meme a day.",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "env $(cat .env) node server.js"
   },
   "repository": {
     "type": "git",
@@ -22,6 +22,7 @@
     "url": "https://github.com/pronebird/MemeBotFB/issues"
   },
   "dependencies": {
-    "node-schedule": "~0.1.13"
+    "node-schedule": "^1.2.0",
+    "request": "^2.80.0"
   }
 }
