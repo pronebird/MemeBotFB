@@ -13,6 +13,7 @@ var TOKEN_FILE = '.token';
 
 var request = require('request');
 var querystring = require('querystring');
+var url = require('url');
 var readline = require('readline');
 var fs = require('fs');
 var util = require('util');
@@ -59,7 +60,7 @@ function bot_run(cmd) {
 		var promise = BOT_COMMANDS[cmd](input);
 
 		rl.pause();
-		
+
 		promise.then(function () {
 			rl.prompt();
 		}).catch(function (error) {
@@ -97,6 +98,23 @@ function bot_quit(input) {
 
 function bot_token(input) {
 	input = input.trim();
+
+	if(/^https?/i.test(input)) {
+		console.log('Parsing token from URL...');
+		try {
+			var components = url.parse(input, true);
+			var hash = (components.hash || '').replace(/^#/, '');
+			var params = querystring.parse(hash);
+			if(typeof(params) === 'object' && typeof(params.access_token) === 'string') {
+				input = params.access_token.trim();
+			} else {
+				throw new Error('Access token is not found in URL.');
+			}
+		} catch(e) {
+			return Promise.reject(e);
+		}
+	}
+
 	if(input.length == 0) {
 		console.log('Token = ' + ACCESS_TOKEN);
 		return Promise.resolve();
@@ -106,17 +124,16 @@ function bot_token(input) {
 	var path = util.format(exchange_url, APP_ID, APP_SECRET, input);
 
 	return new Promise(function (resolve, reject) {
-		request.get(FACEBOOK_GRAPH + path, function (error, response, body) {
+		request.get({ url: FACEBOOK_GRAPH + path, json: true }, function (error, response, body) {
 			if(error) {
 				console.log('Cannot get long-live token. Reason: ' + error.message);
 				return reject(error);
 			}
 
-			var exchange = querystring.parse(body);
-			ACCESS_TOKEN = exchange.access_token;
+			ACCESS_TOKEN = body.access_token;
 
 			console.log('Exchanged short-lived token for long-lived token.', ACCESS_TOKEN);
-			console.log('Long-lived token expires in ~%d days', parseInt(exchange.expires / 86400) );
+			console.log('Long-lived token expires in ~%d days', parseInt(body.expires_in / 86400) );
 
 			fs.writeFile(TOKEN_FILE, ACCESS_TOKEN, function (error) {
 				if(error) {
@@ -137,14 +154,14 @@ function bot_entertain(input) {
 			if(error) { return reject(error); }
 
 			var json;
-			try { 
-				json = JSON.parse(body); 
+			try {
+				json = JSON.parse(body);
 			} catch(e) {
-				return reject(e); 
+				return reject(e);
 			}
 
-			if(!json.success) { 
-				return reject(new Error('API failure. Got JSON:\n' + util.inspect(json))); 
+			if(!json.success) {
+				return reject(new Error('API failure. Got JSON:\n' + util.inspect(json)));
 			}
 
 			var meme = json.result[0];
@@ -176,7 +193,7 @@ function bot_entertain(input) {
 
 			request.post(FACEBOOK_GRAPH + '/me/photos', options, function (error, response, body) {
 				var json;
-				try { 
+				try {
 					json = JSON.parse(body);
 				} catch(e) {
 					return reject(e);
